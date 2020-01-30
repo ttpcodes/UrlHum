@@ -1,4 +1,4 @@
-FROM php:alpine
+FROM php:7.3.14-cli-alpine3.11
 
 WORKDIR /app
 RUN apk add --no-cache composer && docker-php-ext-install mysqli pdo pdo_mysql
