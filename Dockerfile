@@ -5,7 +5,7 @@ WORKDIR /srv
 RUN npm install
 RUN npm run production
 
-FROM php:7.4.2-alpine
+FROM php:7.3.14-alpine
 
 RUN apk add --no-cache --virtual build-deps composer libpng-dev zlib-dev
 RUN docker-php-ext-install bcmath
