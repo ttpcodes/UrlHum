@@ -1,14 +1,25 @@
-FROM php:alpine
+FROM node:13.8.0-alpine3.11 as frontend
 
-WORKDIR /app
+COPY . /srv
+WORKDIR /srv
+RUN npm install
+RUN npm run production
 
-RUN apk add --no-cache --virtual build-deps libpng-dev zlib-dev
-RUN apk add --no-cache composer && docker-php-ext-install bcmath gd mysqli pdo pdo_mysql
+FROM php:7.4.2-alpine
+
+RUN apk add --no-cache --virtual build-deps composer libpng-dev zlib-dev
+RUN docker-php-ext-install bcmath
+RUN docker-php-ext-install gd
+RUN docker-php-ext-install mysqli
+RUN docker-php-ext-install pdo
+RUN docker-php-ext-install pdo_mysql
+
+COPY --from=frontend /srv /srv
+WORKDIR /srv
+RUN composer install --optimize-autoloader
+
 RUN apk del build-deps
-
 RUN apk add --no-cache libpng libpq
 
-COPY . ./
-RUN composer install
 RUN echo -e '#!/bin/sh\nuntil nc -z mysql 3306; do sleep 1; done\nphp artisan migrate -n --force\nif [ ! -f "/seed-done" ]; then php artisan db:seed -n --force && php artisan settings:set && touch /seed-done; fi\nphp artisan serve --host=0.0.0.0 --port=8000' > entrypoint.sh && chmod +x entrypoint.sh
 CMD [ "./entrypoint.sh" ]
