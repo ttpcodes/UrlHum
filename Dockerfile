@@ -1,7 +1,13 @@
 FROM php:alpine
 
 WORKDIR /app
-RUN apk add --no-cache composer && docker-php-ext-install mysqli pdo pdo_mysql
+
+RUN apk add --no-cache --virtual build-deps libpng-dev zlib-dev
+RUN apk add --no-cache composer && docker-php-ext-install bcmath gd mysqli pdo pdo_mysql
+RUN apk del build-deps
+
+RUN apk add --no-cache libpng libpq
+
 COPY . ./
 RUN composer install
 RUN echo -e '#!/bin/sh\nuntil nc -z mysql 3306; do sleep 1; done\nphp artisan migrate -n --force\nif [ ! -f "/seed-done" ]; then php artisan db:seed -n --force && php artisan settings:set && touch /seed-done; fi\nphp artisan serve --host=0.0.0.0 --port=8000' > entrypoint.sh && chmod +x entrypoint.sh
